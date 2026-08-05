@@ -64,7 +64,7 @@ func getServicePrincipalToken(settings auth.EnvironmentSettings, resource string
 	}
 
 	// federated OIDC JWT assertion
-	jwt, err := jwtLookup()
+	_, err := jwtLookup()
 	if err == nil {
 		clientID, isPresent := os.LookupEnv("AZURE_CLIENT_ID")
 		if !isPresent {
@@ -80,7 +80,7 @@ func getServicePrincipalToken(settings auth.EnvironmentSettings, resource string
 			return &adal.ServicePrincipalToken{}, fmt.Errorf("failed to initialise OAuthConfig - %w", err)
 		}
 
-		return adal.NewServicePrincipalTokenFromFederatedToken(*oAuthConfig, clientID, *jwt, resource)
+		return adal.NewServicePrincipalTokenFromFederatedTokenCallback(*oAuthConfig, clientID, jwtLookup, resource)
 	}
 
 	// 4. MSI
@@ -89,20 +89,20 @@ func getServicePrincipalToken(settings auth.EnvironmentSettings, resource string
 	})
 }
 
-func jwtLookup() (*string, error) {
+func jwtLookup() (string, error) {
 	jwt, isPresent := os.LookupEnv("AZURE_FEDERATED_TOKEN")
 	if isPresent {
-		return &jwt, nil
+		return jwt, nil
 	}
 
-	if jwtFile, isPresent := os.LookupEnv("AZURE_FEDERATED_TOKEN_FILE"); isPresent {
+	jwtFile, isPresent := os.LookupEnv("AZURE_FEDERATED_TOKEN_FILE")
+	if isPresent {
 		jwtBytes, err := os.ReadFile(jwtFile)
 		if err != nil {
-			return nil, err
+			return "", err
 		}
-		jwt = string(jwtBytes)
-		return &jwt, nil
+		return string(jwtBytes), nil
 	}
 
-	return nil, fmt.Errorf("no JWT found")
+	return "", fmt.Errorf("no JWT found")
 }

@@ -59,6 +59,8 @@ GOTEST += -count=1
 endif
 
 TEST_PACKAGE ?= ./...
+# the integration tests talk to a live registry, so they are excluded by path
+UNIT_PACKAGES = $(shell $(GO) list ./... | grep -v /integration)
 COVER_OUT:=$(REPORTS_DIR)/cover.out
 COVERFLAGS=-coverprofile=$(COVER_OUT) --covermode=count --coverpkg=./...
 
@@ -85,7 +87,7 @@ build: $(GO_DEPENDENCIES) clean ## Build binary for current OS
 	CGO_ENABLED=$(CGO_ENABLED) GOARCH=$(GOARCH) GOOS=$(GOOS) $(GO) $(BUILD_TARGET) $(BUILDFLAGS) -o build/$(NAME) $(MAIN_SRC_FILE)
 
 build-all: $(GO_DEPENDENCIES) build make-reports-dir ## Build all files - runtime, all tests etc.
-	CGO_ENABLED=$(CGO_ENABLED) GOARCH=$(GOARCH) GOOS=$(GOOS) $(GOTEST) -run=nope -tags=integration -failfast -short ./... $(BUILDFLAGS)
+	CGO_ENABLED=$(CGO_ENABLED) GOARCH=$(GOARCH) GOOS=$(GOOS) $(GOTEST) -run=nope -failfast -short ./... $(BUILDFLAGS)
 
 tidy-deps: ## Cleans up dependencies
 	$(GO) mod tidy
@@ -96,11 +98,14 @@ tidy-deps: ## Cleans up dependencies
 make-reports-dir:
 	mkdir -p $(REPORTS_DIR)
 
-test: ## Run tests with the "unit" build tag
-	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) --tags=unit -failfast -short ./... $(TEST_BUILDFLAGS)
+test: ## Run the unit tests
+	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) -failfast -short $(UNIT_PACKAGES) $(TEST_BUILDFLAGS)
 
-test-coverage : make-reports-dir ## Run tests and coverage for all tests with the "unit" build tag
-	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) --tags=unit $(COVERFLAGS) -failfast -short ./... $(TEST_BUILDFLAGS)
+integration-test: ## Run the live ACR tests
+	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -count=1 -v ./integration/... $(TEST_BUILDFLAGS)
+
+test-coverage : make-reports-dir ## Run tests and coverage for the unit tests
+	CGO_ENABLED=$(CGO_ENABLED) $(GOTEST) $(COVERFLAGS) -failfast -short $(UNIT_PACKAGES) $(TEST_BUILDFLAGS)
 
 test-report: make-reports-dir get-test-deps test-coverage ## Create the test report
 	@gocov convert $(COVER_OUT) | gocov report

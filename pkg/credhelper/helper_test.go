@@ -29,7 +29,11 @@ func TestIsACRHelper(t *testing.T) {
 		{"myregistry.azurecr.de", true},
 		{"myregistry.azurecr.us", true},
 		{"mcr.microsoft.com", true},
-		{"myregistry.azurecr.me", false}, // not a known tld
+		{"myregistry.westeurope.data.azurecr.io", true}, // dedicated data endpoint
+		{"myregistry.azurecr.me", false},                // not a known tld
+		{"evil.azurecr.io.attacker.com", false},         // suffix, not prefix
+		{"myregistry.azurecr.io.example.org", false},
+		{"azurecr.io", false},
 		{"notacr.xcr.example", false},
 		{"127.0.0.1:12345", false},
 		{"localhost:12345", false},

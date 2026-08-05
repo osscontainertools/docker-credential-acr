@@ -16,12 +16,13 @@ limitations under the License.
 package credhelper
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/url"
 	"regexp"
+	"time"
 
-	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/docker/docker-credential-helpers/credentials"
 	"github.com/osscontainertools/docker-credential-acr/pkg/registry"
 	"github.com/osscontainertools/docker-credential-acr/pkg/token"
@@ -30,8 +31,9 @@ import (
 var acrRE = regexp.MustCompile(`^.*\.azurecr\.io$|^.*\.azurecr\.cn$|^.*\.azurecr\.de$|^.*\.azurecr\.us$`)
 
 const (
-	mcrHostname   = "mcr.microsoft.com"
-	tokenUsername = "<token>"
+	mcrHostname    = "mcr.microsoft.com"
+	tokenUsername  = "<token>"
+	defaultTimeOut = 30 * time.Second
 )
 
 type ACRCredHelper struct {
@@ -66,11 +68,14 @@ func (a ACRCredHelper) Get(serverURL string) (string, string, error) {
 		return "", "", errors.New("serverURL does not refer to Azure Container Registry")
 	}
 
-	spToken, settings, err := token.GetServicePrincipalTokenFromEnvironment()
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeOut)
+	defer cancel()
+
+	accessToken, tenantID, err := token.GetAccessToken(ctx)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to acquire sp token %w", err)
 	}
-	refreshToken, err := registry.GetRegistryRefreshTokenFromAADExchange(serverURL, spToken, settings.Values[auth.TenantID])
+	refreshToken, err := registry.GetRefreshToken(ctx, serverURL, tenantID, accessToken)
 	if err != nil {
 		return "", "", fmt.Errorf("failed to acquire refresh token %w", err)
 	}

@@ -5,6 +5,12 @@ located [here](https://github.com/Azure/acr-docker-credential-helper) which reli
 line and is not optimised for use in CI environments. Primary use case for this helper is for use
 with kaniko and other tools running in CI scenarios wishing to push to Azure Container Registry
 
+> [!IMPORTANT]
+> This is the maintained continuation of
+> [`chrismellard/docker-credential-acr-env`](https://github.com/chrismellard/docker-credential-acr-env),
+> which has gone defunct in March of 2023.
+> The focus of this fork is to keep dependencies up-to-date and fix bugs.
+
 ## How it works
 
 The credential helper sources its configuration from well-known Azure environmental information.

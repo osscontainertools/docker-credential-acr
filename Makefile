@@ -2,13 +2,13 @@
 rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
 
 SHELL := /bin/bash
-NAME := docker-credential-acr-env
+NAME := docker-credential-acr
 BUILD_TARGET = build
 MAIN_SRC_FILE=./main.go
 GO := GO111MODULE=on go
 GO_NOMOD :=GO111MODULE=off go
 REV := $(shell git rev-parse --short HEAD 2> /dev/null || echo 'unknown')
-ORG := chrismellard
+ORG := osscontainertools
 ORG_REPO := $(ORG)/$(NAME)
 RELEASE_ORG_REPO := $(ORG_REPO)
 ROOT_PACKAGE := github.com/$(ORG_REPO)
@@ -32,7 +32,7 @@ VERSION ?= $(shell echo "$$(git for-each-ref refs/tags/ --count=1 --sort=-versio
 # Full build flags used when building binaries. Not used for test compilation/execution.
 BUILDFLAGS :=  -ldflags \
   " -X $(ROOT_PACKAGE)/pkg/cmd/version.Version=$(VERSION)\
-		-X github.com/chrismellard/docker-credential-acr-env/pkg/cmd/version.Version=$(VERSION)\
+		-X github.com/osscontainertools/docker-credential-acr/pkg/cmd/version.Version=$(VERSION)\
 		-X $(ROOT_PACKAGE)/pkg/cmd/version.Revision='$(REV)'\
 		-X $(ROOT_PACKAGE)/pkg/cmd/version.Branch='$(BRANCH)'\
 		-X $(ROOT_PACKAGE)/pkg/cmd/version.BuildDate='$(BUILD_DATE)'\

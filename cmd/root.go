@@ -28,7 +28,7 @@ var cfgFile string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "docker-credential-acr-env",
+	Use:   "docker-credential-acr",
 	Short: "Docker Helper program for Azure Container Registry",
 }
 

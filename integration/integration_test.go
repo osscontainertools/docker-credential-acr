@@ -20,7 +20,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -31,19 +33,47 @@ import (
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 )
 
-// docker resolves a credHelpers entry to docker-credential-<value>, so the binary
-// has to carry this exact name for the lookup in TestPull to find it
-const helperName = "docker-credential-acr"
+const (
+	// docker resolves a credHelpers entry to docker-credential-<value>, so the value
+	// in config.json and the name of the binary have to agree
+	credHelper = "acr"
+	helperName = "docker-credential-" + credHelper
+)
 
-// TestGet drives the built binary over the credential helper protocol: the
-// registry goes in on stdin, credentials come back on stdout as JSON.
+var servicePrincipalEnv = []string{"AZURE_CLIENT_ID", "AZURE_CLIENT_SECRET", "AZURE_TENANT_ID", "ACR_TEST_REGISTRY"}
+
+// helperDir holds the binary under test, built once for the whole package
+var helperDir string
+
+func TestMain(m *testing.M) {
+	dir, err := os.MkdirTemp("", "docker-credential-acr")
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+
+	cmd := exec.Command("go", "build", "-o", filepath.Join(dir, helperName), ".")
+	cmd.Dir = ".."
+	if out, err := cmd.CombinedOutput(); err != nil {
+		fmt.Fprintf(os.Stderr, "building %s: %v\n%s", helperName, err, out)
+		_ = os.RemoveAll(dir)
+		os.Exit(1)
+	}
+	helperDir = dir
+
+	code := m.Run()
+	_ = os.RemoveAll(dir)
+	os.Exit(code)
+}
+
 func TestGet(t *testing.T) {
-	registry := requireEnv(t)
+	requireEnv(t, servicePrincipalEnv...)
 
-	cmd := exec.Command(filepath.Join(buildHelper(t), helperName), "get")
-	cmd.Stdin = strings.NewReader(registry)
+	cmd := exec.Command(filepath.Join(helperDir, helperName), "get")
+	cmd.Stdin = strings.NewReader(os.Getenv("ACR_TEST_REGISTRY"))
 	out := runCommand(cmd, t)
 
 	var creds struct {
@@ -61,23 +91,75 @@ func TestGet(t *testing.T) {
 	}
 }
 
-// TestPull pulls from a real registry through the full chain a docker client
-// takes: a config.json credHelpers entry, a PATH lookup for the helper binary,
-// then the protocol. The service principal needs AcrPull on ACR_TEST_REGISTRY.
-func TestPull(t *testing.T) {
-	registry := requireEnv(t)
+func TestPullWithClientSecret(t *testing.T) {
+	requireEnv(t, servicePrincipalEnv...)
+
+	pullThroughHelper(t)
+}
+
+// TestPullWithFederatedToken needs a federated identity credential on the app
+// registration naming ACR_TEST_OIDC_ISSUER and ACR_TEST_OIDC_SUBJECT, whose JWKS
+// publishes ACR_TEST_OIDC_KID for the key in ACR_TEST_OIDC_KEY.
+func TestPullWithFederatedToken(t *testing.T) {
+	requireEnv(t, "AZURE_CLIENT_ID", "AZURE_TENANT_ID", "ACR_TEST_REGISTRY",
+		"ACR_TEST_OIDC_ISSUER", "ACR_TEST_OIDC_SUBJECT", "ACR_TEST_OIDC_KEY", "ACR_TEST_OIDC_KID")
+
+	assertion := mintFederatedJWT(t,
+		os.Getenv("ACR_TEST_OIDC_ISSUER"),
+		os.Getenv("ACR_TEST_OIDC_SUBJECT"),
+		os.Getenv("ACR_TEST_OIDC_KEY"),
+		os.Getenv("ACR_TEST_OIDC_KID"))
+
+	tokenFile := filepath.Join(t.TempDir(), "token")
+	if err := os.WriteFile(tokenFile, []byte(assertion), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	// an empty value reads as absent, go-autorest only records env values it finds set
+	t.Setenv("AZURE_CLIENT_SECRET", "")
+	t.Setenv("AZURE_FEDERATED_TOKEN_FILE", tokenFile)
+
+	pullThroughHelper(t)
+}
+
+// TestPullWithMSI runs against a stub endpoint, see startMSIStub for what that does
+// and does not fake.
+func TestPullWithMSI(t *testing.T) {
+	requireEnv(t, servicePrincipalEnv...)
+
+	endpoint := startMSIStub(t,
+		os.Getenv("AZURE_TENANT_ID"),
+		os.Getenv("AZURE_CLIENT_ID"),
+		os.Getenv("AZURE_CLIENT_SECRET"))
+
+	// an empty value reads as absent, go-autorest only records env values it finds set
+	t.Setenv("AZURE_CLIENT_SECRET", "")
+	t.Setenv("MSI_ENDPOINT", endpoint)
+	t.Setenv("MSI_SECRET", "stub")
+
+	pullThroughHelper(t)
+}
+
+// pullThroughHelper pulls through the full chain a docker client takes, a
+// config.json credHelpers entry and a PATH lookup for the binary. Which credential
+// route the helper takes is left to the environment the caller sets up. The
+// identity needs AcrPull on ACR_TEST_REGISTRY.
+func pullThroughHelper(t *testing.T) {
+	t.Helper()
+
+	registry := os.Getenv("ACR_TEST_REGISTRY")
 	image := os.Getenv("ACR_TEST_IMAGE")
 	if image == "" {
 		image = "hello:test"
 	}
 
 	dockerConfig := t.TempDir()
-	config := fmt.Sprintf(`{"credHelpers":{%q:%q}}`, registry, strings.TrimPrefix(helperName, "docker-credential-"))
+	config := fmt.Sprintf(`{"credHelpers":{%q:%q}}`, registry, credHelper)
 	if err := os.WriteFile(filepath.Join(dockerConfig, "config.json"), []byte(config), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	t.Setenv("DOCKER_CONFIG", dockerConfig)
-	t.Setenv("PATH", buildHelper(t)+string(os.PathListSeparator)+os.Getenv("PATH"))
+	t.Setenv("PATH", helperDir+string(os.PathListSeparator)+os.Getenv("PATH"))
 
 	ref, err := name.ParseReference(registry + "/" + image)
 	if err != nil {
@@ -88,29 +170,35 @@ func TestPull(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
 	defer cancel()
 
-	var lastErr error
 	for {
-		_, lastErr = remote.Head(ref, remote.WithAuthFromKeychain(authn.DefaultKeychain), remote.WithContext(ctx))
-		if lastErr == nil {
+		_, err := remote.Head(ref, remote.WithAuthFromKeychain(authn.DefaultKeychain), remote.WithContext(ctx))
+		if err == nil {
 			t.Logf("pulled %s successfully", ref)
 			return
 		}
-		t.Logf("pull failed, retrying while the role assignment propagates: %v", lastErr)
+
+		// only a rejected token is worth waiting on, anything else stays broken
+		var rerr *transport.Error
+		if !errors.As(err, &rerr) || (rerr.StatusCode != http.StatusUnauthorized && rerr.StatusCode != http.StatusForbidden) {
+			t.Fatalf("could not pull %s: %v", ref, err)
+		}
+
+		t.Logf("pull unauthorized, retrying while the role assignment propagates: %v", err)
 		select {
 		case <-ctx.Done():
-			t.Fatalf("could not pull %s within timeout: %v", ref, lastErr)
+			t.Fatalf("could not pull %s within timeout: %v", ref, err)
 		case <-time.After(10 * time.Second):
 		}
 	}
 }
 
-// requireEnv fails rather than skips, as the integration build tag already means
-// this run was asked for. It returns ACR_TEST_REGISTRY.
-func requireEnv(t *testing.T) string {
+// requireEnv fails rather than skips, as running this package at all already means
+// the live tests were asked for.
+func requireEnv(t *testing.T, keys ...string) {
 	t.Helper()
 
 	var missing []string
-	for _, k := range []string{"AZURE_CLIENT_ID", "AZURE_CLIENT_SECRET", "AZURE_TENANT_ID", "ACR_TEST_REGISTRY"} {
+	for _, k := range keys {
 		if os.Getenv(k) == "" {
 			missing = append(missing, k)
 		}
@@ -118,22 +206,10 @@ func requireEnv(t *testing.T) string {
 	if len(missing) > 0 {
 		t.Fatalf("required environment variables not set: %s", strings.Join(missing, ", "))
 	}
-	return os.Getenv("ACR_TEST_REGISTRY")
-}
-
-// buildHelper builds the binary under test and returns the directory holding it.
-func buildHelper(t *testing.T) string {
-	t.Helper()
-
-	dir := t.TempDir()
-	cmd := exec.Command("go", "build", "-o", filepath.Join(dir, helperName), ".")
-	cmd.Dir = ".."
-	runCommand(cmd, t)
-	return dir
 }
 
 // runCommand returns stdout only, so a helper writing diagnostics to stderr does
-// not look like protocol output. On failure it reports both streams.
+// not look like protocol output.
 func runCommand(cmd *exec.Cmd, t *testing.T) []byte {
 	t.Helper()
 

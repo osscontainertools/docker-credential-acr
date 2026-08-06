@@ -19,6 +19,10 @@ builds:
       - windows_arm64
       - windows_386
 
+release:
+  # the tag publishes a draft, so the notes can be reviewed before anyone sees it
+  draft: true
+
 checksum:
   name_template: 'checksums.txt'
 snapshot:

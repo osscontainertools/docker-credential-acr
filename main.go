@@ -17,6 +17,9 @@ package main
 
 import "github.com/osscontainertools/docker-credential-acr/cmd"
 
+// stamped by goreleaser, which passes -X main.version by default
+var version = "dev"
+
 func main() {
-	cmd.Execute()
+	cmd.Execute(version)
 }

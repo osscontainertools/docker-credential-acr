@@ -166,10 +166,9 @@ importfmt: get-fmt-deps
 	goimports -w $(GO_DEPENDENCIES)
 
 .PHONY: lint
-lint: ## Lint the code
-	./hack/gofmt.sh
-	./hack/linter.sh
-	./hack/generate.sh
+lint: ## Lint the code, same invocation the CI uses
+	golangci-lint run --no-config ./...
+	golangci-lint fmt --no-config -E gofmt -E goimports --diff
 
 .PHONY: all
 all: fmt build test lint generate-refdocs

@@ -22,31 +22,31 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/preview/containerregistry/runtime/2019-08-15-preview/containerregistry"
 	"github.com/Azure/go-autorest/autorest"
-	"github.com/Azure/go-autorest/autorest/adal"
 )
 
-// GetRegistryRefreshTokenFromAADExchange retrieves an OAuth2 refresh token for the registry specified by serverURL
-func GetRegistryRefreshTokenFromAADExchange(serverURL string, principalToken *adal.ServicePrincipalToken, tenantID string) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeOut)
-	defer cancel()
+// staticToken satisfies adal.OAuthTokenProvider for an already acquired token, so
+// the exchange does not have to know how the token was obtained
+type staticToken string
 
-	// If refreshing fails, don't try again, just fail.
-	principalToken.MaxMSIRefreshAttempts = 1
+func (t staticToken) OAuthToken() string { return string(t) }
 
-	if err := principalToken.EnsureFreshWithContext(ctx); err != nil {
-		return "", fmt.Errorf("error refreshing sp token - %w", err)
-	}
-
+// GetRefreshToken exchanges an Azure AD access token for an OAuth2 refresh token for
+// the registry specified by serverURL
+func GetRefreshToken(ctx context.Context, serverURL, tenantID, accessToken string) (string, error) {
 	registryName, err := getRegistryURL(serverURL)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse server URL - %w", err)
 	}
+
 	refreshTokenClient := containerregistry.NewRefreshTokensClient(registryName.String())
-	authorizer := autorest.NewBearerAuthorizer(principalToken)
-	refreshTokenClient.Authorizer = authorizer
-	rt, err := refreshTokenClient.GetFromExchange(ctx, "access_token", serverURL, tenantID, "", principalToken.Token().AccessToken)
+	refreshTokenClient.Authorizer = autorest.NewBearerAuthorizer(staticToken(accessToken))
+
+	rt, err := refreshTokenClient.GetFromExchange(ctx, "access_token", serverURL, tenantID, "", accessToken)
 	if err != nil {
 		return "", fmt.Errorf("failed to get refresh token for container registry - %w", err)
+	}
+	if rt.RefreshToken == nil {
+		return "", fmt.Errorf("no refresh token for container registry %s", serverURL)
 	}
 
 	return *rt.RefreshToken, nil

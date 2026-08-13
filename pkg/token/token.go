@@ -16,6 +16,7 @@ limitations under the License.
 package token
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -23,18 +24,27 @@ import (
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 )
 
-func GetServicePrincipalTokenFromEnvironment() (*adal.ServicePrincipalToken, auth.EnvironmentSettings, error) {
+// GetAccessToken acquires an Azure AD access token from the ambient environment and
+// returns it with the tenant the registry exchange has to be told about.
+func GetAccessToken(ctx context.Context) (accessToken string, tenantID string, err error) {
 	settings, err := auth.GetSettingsFromEnvironment()
 	if err != nil {
-		return &adal.ServicePrincipalToken{}, auth.EnvironmentSettings{}, fmt.Errorf("failed to get auth settings from environment - %w", err)
+		return "", "", fmt.Errorf("failed to get auth settings from environment - %w", err)
 	}
 
 	spToken, err := getServicePrincipalToken(settings, settings.Environment.ResourceManagerEndpoint)
 	if err != nil {
-		return &adal.ServicePrincipalToken{}, auth.EnvironmentSettings{}, fmt.Errorf("failed to initialise sp token config %w", err)
+		return "", "", fmt.Errorf("failed to initialise sp token config %w", err)
 	}
 
-	return spToken, settings, nil
+	// if refreshing fails, don't try again, just fail
+	spToken.MaxMSIRefreshAttempts = 1
+
+	if err := spToken.EnsureFreshWithContext(ctx); err != nil {
+		return "", "", fmt.Errorf("error refreshing sp token - %w", err)
+	}
+
+	return spToken.Token().AccessToken, settings.Values[auth.TenantID], nil
 }
 
 // getServicePrincipalToken retrieves an Azure AD OAuth2 token from the supplied environment settings for the specified resource

@@ -15,11 +15,4 @@ limitations under the License.
 */
 package registry
 
-import (
-	"time"
-)
-
-const (
-	secureScheme   = "https://"
-	defaultTimeOut = time.Duration(30) * time.Second
-)
+const secureScheme = "https://"

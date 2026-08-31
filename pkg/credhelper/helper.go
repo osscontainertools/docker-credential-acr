@@ -20,13 +20,12 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"os"
 	"regexp"
-	"strconv"
 	"time"
 
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/docker/docker-credential-helpers/credentials"
+	"github.com/osscontainertools/docker-credential-acr/internal/config"
 	"github.com/osscontainertools/docker-credential-acr/pkg/registry"
 	"github.com/osscontainertools/docker-credential-acr/pkg/token"
 )
@@ -71,8 +70,7 @@ func (a ACRCredHelper) Get(serverURL string) (string, string, error) {
 		return "", "", errors.New("serverURL does not refer to Azure Container Registry")
 	}
 
-	useAzidentity, _ := strconv.ParseBool(os.Getenv("FF_DOCKER_ACR_AZIDENTITY"))
-	if useAzidentity {
+	if config.EnvBool("FF_DOCKER_ACR_AZIDENTITY", false) {
 		return getViaAzidentity(serverURL)
 	} else {
 		return getViaServicePrincipal(serverURL)

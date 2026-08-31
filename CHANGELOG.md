@@ -1,3 +1,41 @@
+# v0.9.0 Release 2026-08-31
+## Update Notice
+In this Release we activated these feature-flags:
+* [FF_DOCKER_ACR_REGISTRY_SCOPED_TOKEN](https://github.com/osscontainertools/docker-credential-acr#flag-ff_docker_acr_registry_scoped_token)
+
+> ⚠️ `AZURE_AD_RESOURCE` no longer has any effect while this flag is on. It only ever widened the audience, which is the opposite of what the flag is for.
+
+`FF_DOCKER_ACR_REGISTRY_SCOPED_TOKEN` asks AAD for a token scoped to `https://containerregistry.azure.net` instead of `https://management.azure.com/`. The token is handed to whatever host came out of the image reference, as a `Bearer` header and as an `access_token` form field, so until now a host that got the token by mistake held one good for the whole subscription. It is now good for ACR and nothing else. No migration needed, the service principal or managed identity needs no extra role, the exchange the helper performs is the same one.
+
+You can roll-back this change by overriding it in the environment ie.
+```yaml
+job:
+  variables:
+    FF_DOCKER_ACR_REGISTRY_SCOPED_TOKEN: "0"
+```
+Please also notify us by [filing a new issue](https://github.com/osscontainertools/docker-credential-acr/issues/new).
+
+## What's Changed
+### Security
+* `FF_DOCKER_ACR_REGISTRY_SCOPED_TOKEN=true` an ARM scoped token good for the whole subscription is handed to a host that came out of an image reference: https://github.com/osscontainertools/docker-credential-acr/pull/12
+* go stdlib v1.26.5: CVE-2026-33818 CVE-2026-46600 CVE-2026-56853 CVE-2026-56858 CVE-2026-56859 CVE-2026-56860 CVE-2026-56862
+* golang.org/x/crypto v0.54.0: CVE-2026-56854
+
+### Maintenance
+* build(deps): bump step-security/harden-runner from 2.20.0 to 2.21.0: https://github.com/osscontainertools/docker-credential-acr/pull/5 https://github.com/osscontainertools/docker-credential-acr/pull/8
+* build(deps): bump github.com/google/go-containerregistry from 0.21.9 to 0.22.0: https://github.com/osscontainertools/docker-credential-acr/pull/10
+* build(deps): bump go from 1.26.5 to 1.26.7: https://github.com/osscontainertools/docker-credential-acr/pull/9
+* build(deps): bump github.com/docker/docker-credential-helpers from 0.9.8 to 0.9.9: https://github.com/osscontainertools/docker-credential-acr/pull/11
+
+### Fork Related
+* add a dependabot config: https://github.com/osscontainertools/docker-credential-acr/pull/4
+* add a funding config: https://github.com/osscontainertools/docker-credential-acr/pull/6
+* the nightly vulnerability scan swallows its exit code: https://github.com/osscontainertools/docker-credential-acr/pull/7
+
+### Refactorings
+* `FF_DOCKER_ACR_AZIDENTITY=false` acquire the token and exchange it through azidentity and azcontainerregistry instead of the retired go-autorest stack: https://github.com/osscontainertools/docker-credential-acr/pull/1
+
+
 # v0.8.0 Release 2026-08-13
 
 ## Community Update

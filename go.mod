@@ -1,6 +1,6 @@
 module github.com/osscontainertools/docker-credential-acr
 
-go 1.26.7
+go 1.26.8
 
 require (
 	github.com/Azure/azure-sdk-for-go v68.0.0+incompatible

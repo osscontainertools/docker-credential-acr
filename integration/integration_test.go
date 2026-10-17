@@ -49,9 +49,6 @@ var servicePrincipalEnv = []string{"AZURE_CLIENT_ID", "AZURE_CLIENT_SECRET", "AZ
 var helperDir string
 
 func TestMain(m *testing.M) {
-	_ = os.Setenv("FF_DOCKER_ACR_AZIDENTITY", "true")
-	_ = os.Setenv("FF_DOCKER_ACR_REGISTRY_SCOPED_TOKEN", "true")
-
 	dir, err := os.MkdirTemp("", "docker-credential-acr")
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)

@@ -34,7 +34,6 @@ Don't run tests, lint or the cross compile locally. Check `unit-tests` and `buil
    ```
    # v<version> Release YYYY-MM-DD
 
-   ## Update Notice   only when a flag is activated or removed, or a breaking change lands
    ## What's Changed
    ### Security      CVE fixes, hardening
    ### Bugfixes      incorrect behavior now fixed
@@ -54,29 +53,7 @@ Don't run tests, lint or the cross compile locally. Check `unit-tests` and `buil
    - Merge repeated bumps of one package into a single range: `build(deps): bump <pkg> from <first> to <last>`.
    - Every version change in `git diff $PREV..main -- go.mod .github/workflows/` must appear in Maintenance. If not, stop and report the gap.
 
-4. **Update Notice** — the explanation goes here, never in What's Changed. Only for changes this repo made. Upstream changes (Go platform minimums, stdlib behavior) stay a Maintenance line. Follow the shape of kaniko's v1.28.0 notice:
-   ~~~
-   In this Release we activated this feature-flag:
-   * [FF_DOCKER_ACR_X](https://github.com/osscontainertools/docker-credential-acr#flag-ff_docker_acr_x)
-
-   <what it does, and whether migration is needed>
-
-   You can roll-back this change by overriding it in the environment ie.
-   ```yaml
-   job:
-     variables:
-       FF_DOCKER_ACR_X: "0"
-   ```
-   Please also notify us by [filing a new issue](https://github.com/osscontainertools/docker-credential-acr/issues/new/choose).
-
-   We further removed this feature-flag:
-   * `FF_DOCKER_ACR_Y`
-
-   <its behavior is now unconditional, the flag has no effect and can be removed>
-   ~~~
-   Also cover any change to the `credHelpers` value (`acr`), the binary name or the module path. The README documents none of them.
-
-5. **Security** — scan the previous tag to find what this release fixes. Build govulncheck with the toolchain in `go.mod`, an older one cannot load the packages:
+4. **Security** — scan the previous tag to find what this release fixes. Build govulncheck with the toolchain in `go.mod`, an older one cannot load the packages:
    ```bash
    BIN=$(mktemp -d)
    GOTOOLCHAIN=$(awk '/^toolchain/{print $2}' go.mod) GOBIN=$BIN go install golang.org/x/vuln/cmd/govulncheck@latest
@@ -87,9 +64,9 @@ Don't run tests, lint or the cross compile locally. Check `unit-tests` and `buil
    ```
    Keep findings whose fixed version is now in `go.mod`. Format: `* <module> <vulnerable version>: CVE-YYYY-NNNNN [CVE-...]`, stdlib as `go stdlib`. Add the name users know it by in parentheses, e.g. `CVE-2026-111943 (eMudhra)`. For a GHSA, look up the CVE with `curl -s https://api.github.com/advisories/<GHSA> | jq -r .cve_id`.
 
-6. **Consistency check** — compare style against the previous two releases and kaniko's `CHANGELOG.md`.
+5. **Consistency check** — compare style against the previous two releases and kaniko's `CHANGELOG.md`.
 
-7. **Commit and open the PR**:
+6. **Commit and open the PR**:
    ```
    git add CHANGELOG.md
    git commit -m "release"
@@ -98,13 +75,13 @@ Don't run tests, lint or the cross compile locally. Check `unit-tests` and `buil
    ```
    Merge once `unit-tests` and `build` are green.
 
-8. **Live tests** on the merged commit. CI has no Azure credentials. Needs `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, `AZURE_TENANT_ID`, `ACR_TEST_REGISTRY`:
+7. **Live tests** on the merged commit. CI has no Azure credentials. Needs `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, `AZURE_TENANT_ID`, `ACR_TEST_REGISTRY`:
    ```
    git checkout main && git pull
    make integration-test
    ```
 
-9. **Tag via the API**:
+8. **Tag via the API**:
    ```bash
    REPO=osscontainertools/docker-credential-acr
    SHA=$(gh api repos/$REPO/commits/main --jq .sha)
@@ -113,7 +90,7 @@ Don't run tests, lint or the cross compile locally. Check `unit-tests` and `buil
    gh api repos/$REPO/git/refs -f ref=refs/tags/v<version> -f sha=$TAG
    ```
 
-10. **Watch the release run**, it creates a draft:
+9. **Watch the release run**, it creates a draft:
     ```bash
     gh run watch $(gh run list --workflow=release.yaml --limit 1 --json databaseId --jq '.[0].databaseId')
     gh release view v<version>
@@ -131,12 +108,12 @@ Don't run tests, lint or the cross compile locally. Check `unit-tests` and `buil
     ```
     Diff the body against `body.md`. Tell the user the binaries are locally built and `checksums.txt` was regenerated. The next patch release restores CI provenance.
 
-11. **Publish** — paste the CHANGELOG section as notes:
+10. **Publish** — paste the CHANGELOG section as notes:
     ```
     gh release edit v<version> --notes-file <file> --draft=false
     ```
 
-12. **Bump consumers** — in the kaniko fork: the module in `go.mod`, the import in `pkg/creds/creds.go` and `tools/tools.go`, then `go mod vendor`. Keep installing the binary under any previous name in `deploy/Dockerfile`.
+11. **Bump consumers** — in the kaniko fork: the module in `go.mod`, the import in `pkg/creds/creds.go` and `tools/tools.go`, then `go mod vendor`. Keep installing the binary under any previous name in `deploy/Dockerfile`.
 
 ## Security releases
 

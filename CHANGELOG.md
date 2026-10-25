@@ -1,3 +1,47 @@
+# v1.0.0 Release 2026-10-25
+
+## Update Notice
+In this Release we activated this feature-flag:
+* [FF_DOCKER_ACR_AZIDENTITY](https://github.com/osscontainertools/docker-credential-acr#flag-ff_docker_acr_azidentity)
+
+`FF_DOCKER_ACR_AZIDENTITY` acquires the token through azidentity instead of go-autorest, which Microsoft retired. The credential sources are the same, environment variables, workload identity and managed identity, so no migration is needed.
+
+You can roll-back this change by overriding it in the environment ie.
+```yaml
+job:
+  variables:
+    FF_DOCKER_ACR_AZIDENTITY: "0"
+```
+Please also notify us by [filing a new issue](https://github.com/osscontainertools/docker-credential-acr/issues/new/choose).
+
+We further removed this feature-flag:
+* `FF_DOCKER_ACR_REGISTRY_SCOPED_TOKEN`
+
+The access token is now always requested for the registry instead of Azure Resource Manager, so a token that reaches the wrong host is useless outside ACR. The flag has no effect and can be removed.
+
+## What's Changed
+### Security
+* go stdlib v1.26.9: CVE-2026-111943 (eMudhra)
+
+### Usability
+* graduate feature flags for v1.0.0 release: https://github.com/osscontainertools/docker-credential-acr/pull/42
+
+### Maintenance
+* build(deps): bump goreleaser/goreleaser-action from 7.2.3 to 7.3.0: https://github.com/osscontainertools/docker-credential-acr/pull/40
+* build(deps): bump github.com/docker/cli from 29.8.2 to 29.9.2: https://github.com/osscontainertools/docker-credential-acr/pull/39 https://github.com/osscontainertools/docker-credential-acr/pull/43 https://github.com/osscontainertools/docker-credential-acr/pull/46
+* build(deps): bump go from 1.26.9 to 1.27.3: https://github.com/osscontainertools/docker-credential-acr/pull/13 https://github.com/osscontainertools/docker-credential-acr/pull/47
+* build(deps): bump github.com/docker/docker-credential-helpers from 0.9.9 to 0.9.12: https://github.com/osscontainertools/docker-credential-acr/pull/43 https://github.com/osscontainertools/docker-credential-acr/pull/46
+* build(deps): bump github.com/klauspost/compress from 1.20.1 to 1.20.3: https://github.com/osscontainertools/docker-credential-acr/pull/43
+* build(deps): bump github.com/Azure/azure-sdk-for-go/sdk/azidentity from 1.14.1 to 1.15.0: https://github.com/osscontainertools/docker-credential-acr/pull/44
+* build(deps): bump step-security/harden-runner from 2.22.1 to 2.22.2: https://github.com/osscontainertools/docker-credential-acr/pull/45
+* build(deps): bump github.com/dimchansky/utfbom from 1.1.1 to 1.2.0: https://github.com/osscontainertools/docker-credential-acr/pull/49
+* build(deps): bump the runner image from ubuntu-24.04 to ubuntu-26.04: https://github.com/osscontainertools/docker-credential-acr/pull/51
+* build(deps): bump golang.org/x/vuln/cmd/govulncheck from 1.6.0 to 1.9.0: https://github.com/osscontainertools/docker-credential-acr/pull/50
+
+### Fork Related
+* stop dependabot from holding back updates with a cooldown: https://github.com/osscontainertools/docker-credential-acr/pull/48
+
+
 # v0.9.2 Release 2026-10-11
 
 ## What's Changed

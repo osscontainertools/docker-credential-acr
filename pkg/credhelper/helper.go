@@ -31,6 +31,7 @@ import (
 )
 
 var acrRE = regexp.MustCompile(`^.*\.azurecr\.io$|^.*\.azurecr\.cn$|^.*\.azurecr\.de$|^.*\.azurecr\.us$`)
+var strictHostCheck = config.EnvBool("FF_DOCKER_ACR_STRICT_HOST_CHECK", true)
 
 const (
 	mcrHostname    = "mcr.microsoft.com"
@@ -53,9 +54,12 @@ func (a ACRCredHelper) Delete(_ string) error {
 	return errors.New("list is unimplemented")
 }
 
-func parseACRRegistry(input string) (string, bool) {
+func parseACRRegistry(input string, strict bool) (string, bool) {
 	serverURL, err := url.Parse("https://" + input)
 	if err != nil {
+		return "", false
+	}
+	if strict && serverURL.Host != input {
 		return "", false
 	}
 	if serverURL.Hostname() == mcrHostname {
@@ -66,7 +70,7 @@ func parseACRRegistry(input string) (string, bool) {
 }
 
 func (a ACRCredHelper) Get(serverURL string) (string, string, error) {
-	host, ok := parseACRRegistry(serverURL)
+	host, ok := parseACRRegistry(serverURL, strictHostCheck)
 	if !ok {
 		return "", "", errors.New("serverURL does not refer to Azure Container Registry")
 	}

@@ -40,9 +40,27 @@ func TestIsACRHelper(t *testing.T) {
 		{"notaurl-)(*$@)(*@)(*", false},
 	} {
 		t.Run(c.url, func(t *testing.T) {
-			got := isACRRegistry(c.url)
+			_, got := parseACRRegistry(c.url)
 			if got != c.want {
 				t.Fatalf("got %t, want %t", got, c.want)
+			}
+		})
+	}
+}
+
+func TestParseACRRegistryPassesParsedHost(t *testing.T) {
+	for _, c := range []struct {
+		url  string
+		want string
+	}{
+		{"myregistry.azurecr.io", "myregistry.azurecr.io"},
+		{"myregistry.azurecr.io:443", "myregistry.azurecr.io:443"},
+		{"user@myregistry.azurecr.io/path?q#f", "myregistry.azurecr.io"},
+	} {
+		t.Run(c.url, func(t *testing.T) {
+			got, ok := parseACRRegistry(c.url)
+			if !ok || got != c.want {
+				t.Fatalf("got %q %t, want %q", got, ok, c.want)
 			}
 		})
 	}

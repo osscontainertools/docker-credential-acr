@@ -46,3 +46,9 @@ where the MSI endpoint will authenticate the MSI context the service is running 
 Token acquisition goes through go-autorest, which Microsoft retired. Set this flag to `true` to go through azidentity instead, its successor in the Azure SDK for Go.
 Defaults to `true`.
 Will be deprecated in `v1.1.0`.
+
+### Flag `FF_DOCKER_ACR_STRICT_HOST_CHECK`
+
+The registry check only looks at whether the parsed host ends in an ACR domain, so it also accepts userinfo, a path, a query, a fragment and percent-escapes. Set this flag to `true` to only accept input that is exactly the parsed `host[:port]`.
+Defaults to `true`.
+Will be deprecated in `v1.1.0`.

@@ -38,11 +38,39 @@ func TestIsACRHelper(t *testing.T) {
 		{"127.0.0.1:12345", false},
 		{"localhost:12345", false},
 		{"notaurl-)(*$@)(*@)(*", false},
+		{"myregistry.azurecr.io:443", true},
+		{"MyRegistry.azurecr.io", true},
+		{"myregistry.AZURECR.IO", false},
+		{"[::1%25.azurecr.io]", false},
+		{"[2001:db8::1%25x.azurecr.io]:443", false},
+		{"foo%C3%A9.azurecr.io", false},
+		{"user@myregistry.azurecr.io", false},
+		{"myregistry.azurecr.io/path", false},
+		{"myregistry.azurecr.io?q", false},
+		{"myregistry.azurecr.io#f", false},
 	} {
 		t.Run(c.url, func(t *testing.T) {
-			got := isACRRegistry(c.url)
+			_, got := parseACRRegistry(c.url, true)
 			if got != c.want {
 				t.Fatalf("got %t, want %t", got, c.want)
+			}
+		})
+	}
+}
+
+func TestParseACRRegistryPassesParsedHost(t *testing.T) {
+	for _, c := range []struct {
+		url  string
+		want string
+	}{
+		{"myregistry.azurecr.io", "myregistry.azurecr.io"},
+		{"myregistry.azurecr.io:443", "myregistry.azurecr.io:443"},
+		{"user@myregistry.azurecr.io/path?q#f", "myregistry.azurecr.io"},
+	} {
+		t.Run(c.url, func(t *testing.T) {
+			got, ok := parseACRRegistry(c.url, false)
+			if !ok || got != c.want {
+				t.Fatalf("got %q %t, want %q", got, ok, c.want)
 			}
 		})
 	}

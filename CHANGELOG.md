@@ -3,7 +3,7 @@
 ## What's Changed
 ### Security
 * golang.org/x/net v0.61.0: CVE-2026-78661 CVE-2026-97045
-* 🔗 stricter acr host check, the input must be exactly `host[:port]`: by @8none1 in https://github.com/osscontainertools/docker-credential-acr/pull/56
+* 🔗 stricter acr host check: by @8none1 in https://github.com/osscontainertools/docker-credential-acr/pull/56
 
 ### Maintenance
 * build(deps): bump golang.org/x/net from 0.61.0 to 0.62.0: https://github.com/osscontainertools/docker-credential-acr/pull/55

@@ -1,3 +1,21 @@
+# v1.0.1 Release 2026-11-08
+
+## What's Changed
+### Security
+* golang.org/x/net v0.61.0: CVE-2026-78661 CVE-2026-97045
+* 🔗 stricter acr host check, the input must be exactly `host[:port]`: by @8none1 in https://github.com/osscontainertools/docker-credential-acr/pull/56
+
+### Maintenance
+* build(deps): bump golang.org/x/net from 0.61.0 to 0.62.0: https://github.com/osscontainertools/docker-credential-acr/pull/55
+* build(deps): bump step-security/harden-runner from 2.22.2 to 2.22.4: https://github.com/osscontainertools/docker-credential-acr/pull/54 https://github.com/osscontainertools/docker-credential-acr/pull/60
+* build(deps): bump github.com/Azure/azure-sdk-for-go/sdk/azcore from 1.23.3 to 1.24.0: https://github.com/osscontainertools/docker-credential-acr/pull/57
+* build(deps): bump github.com/docker/cli from 29.9.2 to 29.9.3: https://github.com/osscontainertools/docker-credential-acr/pull/59
+* build(deps): bump github.com/spf13/pflag from 1.0.10 to 1.1.0: https://github.com/osscontainertools/docker-credential-acr/pull/61
+
+### Fork Related
+* lower the go directive to 1.26.0 so importers on Go 1.26 can adopt the helper: https://github.com/osscontainertools/docker-credential-acr/pull/58
+
+
 # v1.0.0 Release 2026-10-25
 
 ## Update Notice

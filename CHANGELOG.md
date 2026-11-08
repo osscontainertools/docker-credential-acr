@@ -13,7 +13,7 @@
 * build(deps): bump github.com/spf13/pflag from 1.0.10 to 1.1.0: https://github.com/osscontainertools/docker-credential-acr/pull/61
 
 ### Fork Related
-* lower the go directive to 1.26.0 so importers on Go 1.26 can adopt the helper: https://github.com/osscontainertools/docker-credential-acr/pull/58
+* lower the go directive to 1.26.0: https://github.com/osscontainertools/docker-credential-acr/pull/58
 
 
 # v1.0.0 Release 2026-10-25

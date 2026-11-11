@@ -48,8 +48,8 @@ github.com/dimchansky/utfbom v1.2.0 h1:ikiGYT9Wa8zleQ0xrlAWC9Ar9LNInSWRodJ5MkHB3
 github.com/dimchansky/utfbom v1.2.0/go.mod h1:kJPs9PFVyF/LnFVVGz+XXvouv0KxympBxr0pSwv0KQU=
 github.com/docker/cli v29.9.3+incompatible h1:SBaMp7ecohadEHMDrUJg22t9I3awqsAVhnJ7GOcWpfE=
 github.com/docker/cli v29.9.3+incompatible/go.mod h1:JLrzqnKDaYBop7H2jaqPtU4hHvMKP+vjCwu2uszcLI8=
-github.com/docker/docker-credential-helpers v0.9.12 h1:hAgjJcMuC17DPf0Kl/HQSZQ7cxVo+wEA8Oo1SzkmqFg=
-github.com/docker/docker-credential-helpers v0.9.12/go.mod h1:v1S+hepowrQXITkEfw6o4+BMbGot02wiKpzWhGUZK6c=
+github.com/docker/docker-credential-helpers v0.9.13 h1:yLE5jCyKJraJaBACIGqgpLX0UheWfZUwBkIeCu6WPFU=
+github.com/docker/docker-credential-helpers v0.9.13/go.mod h1:v1S+hepowrQXITkEfw6o4+BMbGot02wiKpzWhGUZK6c=
 github.com/golang-jwt/jwt/v4 v4.0.0/go.mod h1:/xlHOz8bRuivTWchD4jCa+NbatV+wEUSzwAxVc6locg=
 github.com/golang-jwt/jwt/v4 v4.2.0/go.mod h1:/xlHOz8bRuivTWchD4jCa+NbatV+wEUSzwAxVc6locg=
 github.com/golang-jwt/jwt/v4 v4.5.0/go.mod h1:m21LjoU+eqJr34lmDMbreY2eSTRJ1cv77w39/MY0Ch0=

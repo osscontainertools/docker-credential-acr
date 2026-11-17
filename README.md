@@ -47,6 +47,13 @@ Token acquisition goes through go-autorest, which Microsoft retired. Set this fl
 Defaults to `true`.
 Will be deprecated in `v1.1.0`.
 
+### Flag `FF_DOCKER_ACR_SKIP_MCR`
+
+The helper treats `mcr.microsoft.com` as an ACR host and asks Azure for a token, although MCR is anonymous and has no token exchange. Outside Azure every MCR lookup waits on the managed identity endpoint for up to 30 seconds.
+Set this flag to `true` to report no credentials for `mcr.microsoft.com`.
+Defaults to `false`.
+Becomes default in `v1.1.0`.
+
 ### Flag `FF_DOCKER_ACR_STRICT_HOST_CHECK`
 
 The registry check only looks at whether the parsed host ends in an ACR domain, so it also accepts userinfo, a path, a query, a fragment and percent-escapes. Set this flag to `true` to only accept input that is exactly the parsed `host[:port]`.

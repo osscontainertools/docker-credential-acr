@@ -91,6 +91,20 @@ func TestGet(t *testing.T) {
 	}
 }
 
+func TestGetSkipsMCR(t *testing.T) {
+	cmd := exec.Command(filepath.Join(helperDir, helperName), "get")
+	cmd.Stdin = strings.NewReader("mcr.microsoft.com")
+	cmd.Env = append(os.Environ(), "FF_DOCKER_ACR_SKIP_MCR=1")
+	out, err := cmd.CombinedOutput()
+	if err == nil {
+		t.Fatalf("helper returned credentials for mcr.microsoft.com: %s", out)
+	}
+	s := "serverURL does not refer to Azure Container Registry"
+	if !strings.Contains(string(out), s) {
+		t.Fatalf("output must contain %q, got: %s", s, out)
+	}
+}
+
 func TestPullWithClientSecret(t *testing.T) {
 	requireEnv(t, servicePrincipalEnv...)
 

@@ -1,3 +1,30 @@
+# v1.0.2 Release 2026-11-22
+
+## What's Changed
+### Security
+* go stdlib v1.27.3: CVE-2026-97054
+* golang.org/x/crypto v0.58.0: GO-2026-5932
+
+### Performance
+* 🔗 `FF_DOCKER_ACR_SKIP_MCR=false` skip the token request for mcr.microsoft.com: by @8none1 in https://github.com/osscontainertools/docker-credential-acr/pull/72
+
+### Maintenance
+* build(deps): bump github.com/klauspost/compress from 1.20.3 to 1.20.5: https://github.com/osscontainertools/docker-credential-acr/pull/63 https://github.com/osscontainertools/docker-credential-acr/pull/75
+* build(deps): bump golang.org/x/sync from 0.24.0 to 0.25.0: https://github.com/osscontainertools/docker-credential-acr/pull/64
+* build(deps): bump golang.org/x/text from 0.43.0 to 0.44.0: https://github.com/osscontainertools/docker-credential-acr/pull/66
+* build(deps): bump golang.org/x/sys from 0.49.0 to 0.50.0: https://github.com/osscontainertools/docker-credential-acr/pull/65
+* build(deps): bump github.com/docker/docker-credential-helpers from 0.9.12 to 0.9.13: https://github.com/osscontainertools/docker-credential-acr/pull/67
+* build(deps): bump golang.org/x/crypto from 0.58.0 to 0.59.0: https://github.com/osscontainertools/docker-credential-acr/pull/68
+* build(deps): bump github.com/docker/cli from 29.9.3 to 29.10.0: https://github.com/osscontainertools/docker-credential-acr/pull/71
+* build(deps): bump actions/setup-go from 7.0.0 to 7.1.0: https://github.com/osscontainertools/docker-credential-acr/pull/70
+* build(deps): bump golang.org/x/net from 0.62.0 to 0.63.0: https://github.com/osscontainertools/docker-credential-acr/pull/73
+* build(deps): bump step-security/harden-runner from 2.22.4 to 2.23.0: https://github.com/osscontainertools/docker-credential-acr/pull/74
+* build(deps): bump go toolchain from 1.27.3 to 1.27.4: https://github.com/osscontainertools/docker-credential-acr/pull/76
+
+### Fork Related
+* lock workflow actions in actions.lock: https://github.com/osscontainertools/docker-credential-acr/pull/69
+
+
 # v1.0.1 Release 2026-11-08
 
 ## What's Changed

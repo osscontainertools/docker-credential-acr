@@ -72,6 +72,9 @@ func parseACRRegistry(input string, strict bool) (string, bool) {
 
 func (a ACRCredHelper) Get(serverURL string) (string, string, error) {
 	host, ok := parseACRRegistry(serverURL, strictHostCheck)
+	if !ok && skipMCR {
+		return "", "", credentials.NewErrCredentialsNotFound()
+	}
 	if !ok {
 		return "", "", errors.New("serverURL does not refer to Azure Container Registry")
 	}

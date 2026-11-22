@@ -49,8 +49,8 @@ Will be deprecated in `v1.1.0`.
 
 ### Flag `FF_DOCKER_ACR_SKIP_MCR`
 
-The helper treats `mcr.microsoft.com` as an ACR host and asks Azure for a token, although MCR is anonymous and has no token exchange. Outside Azure every MCR lookup waits on the managed identity endpoint for up to 30 seconds.
-Set this flag to `true` to report no credentials for `mcr.microsoft.com`.
+The helper treats `mcr.microsoft.com` as an ACR host and asks Azure for a token, although MCR is anonymous and has no token exchange. Outside Azure every MCR lookup waits on the managed identity endpoint for up to 30 seconds. For any other host that is not an ACR registry the helper fails with a plain error, and Docker and go-containerregistry only fall back to an anonymous pull on the credential helper protocol's not-found error.
+Set this flag to `true` to report credentials not found for `mcr.microsoft.com` and every other host that is not an ACR registry.
 Defaults to `false`.
 Becomes default in `v1.1.0`.
 

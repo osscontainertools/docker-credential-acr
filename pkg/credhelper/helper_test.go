@@ -15,7 +15,20 @@ limitations under the License.
 */
 package credhelper
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/docker/docker-credential-helpers/credentials"
+)
+
+func TestGetReportsCredentialsNotFound(t *testing.T) {
+	skipMCR = true
+	t.Cleanup(func() { skipMCR = false })
+	_, _, err := ACRCredHelper{}.Get("123456789012.dkr.ecr.us-east-1.amazonaws.com")
+	if !credentials.IsErrCredentialsNotFound(err) {
+		t.Fatalf("got %v, want credentials not found", err)
+	}
+}
 
 // TestIsACRHelper tests whether URLs are detected as being ACR/MCR registry
 // hosts, to determine whether the cred helper should fail fast.

@@ -30,6 +30,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/docker/docker-credential-helpers/credentials"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
@@ -92,16 +93,36 @@ func TestGet(t *testing.T) {
 }
 
 func TestGetSkipsMCR(t *testing.T) {
-	cmd := exec.Command(filepath.Join(helperDir, helperName), "get")
-	cmd.Stdin = strings.NewReader("mcr.microsoft.com")
-	cmd.Env = append(os.Environ(), "FF_DOCKER_ACR_SKIP_MCR=1")
-	out, err := cmd.CombinedOutput()
-	if err == nil {
-		t.Fatalf("helper returned credentials for mcr.microsoft.com: %s", out)
-	}
-	s := "serverURL does not refer to Azure Container Registry"
-	if !strings.Contains(string(out), s) {
-		t.Fatalf("output must contain %q, got: %s", s, out)
+	for _, c := range []struct {
+		name  string
+		env   []string
+		hosts []string
+		want  string
+	}{
+		{"off", []string{"FF_DOCKER_ACR_SKIP_MCR=0"}, []string{"123456789012.dkr.ecr.us-east-1.amazonaws.com", "docker.io"}, "serverURL does not refer to Azure Container Registry"},
+		{"on", []string{"FF_DOCKER_ACR_SKIP_MCR=1"}, []string{"mcr.microsoft.com", "123456789012.dkr.ecr.us-east-1.amazonaws.com", "docker.io"}, credentials.NewErrCredentialsNotFound().Error()},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			var outs []string
+			for _, host := range c.hosts {
+				cmd := exec.Command(filepath.Join(helperDir, helperName), "get")
+				cmd.Stdin = strings.NewReader(host)
+				cmd.Env = append(os.Environ(), c.env...)
+				out, err := cmd.CombinedOutput()
+				if err == nil {
+					t.Fatalf("helper returned credentials for %s: %s", host, out)
+				}
+				outs = append(outs, string(out))
+			}
+			for _, out := range outs[1:] {
+				if out != outs[0] {
+					t.Fatalf("foreign hosts must be indistinguishable, got %q and %q", outs[0], out)
+				}
+			}
+			if !strings.Contains(outs[0], c.want) {
+				t.Fatalf("output must contain %q, got: %s", c.want, outs[0])
+			}
+		})
 	}
 }
 

@@ -94,16 +94,17 @@ func TestGet(t *testing.T) {
 
 func TestGetSkipsMCR(t *testing.T) {
 	for _, c := range []struct {
-		name string
-		env  []string
-		want string
+		name  string
+		env   []string
+		hosts []string
+		want  string
 	}{
-		{"not acr", []string{"FF_DOCKER_ACR_SKIP_MCR=1"}, "serverURL does not refer to Azure Container Registry"},
-		{"credentials not found", []string{"FF_DOCKER_ACR_SKIP_MCR=1", "FF_DOCKER_ACR_CREDENTIALS_NOT_FOUND=1"}, credentials.NewErrCredentialsNotFound().Error()},
+		{"off", []string{"FF_DOCKER_ACR_SKIP_MCR=0"}, []string{"123456789012.dkr.ecr.us-east-1.amazonaws.com", "docker.io"}, "serverURL does not refer to Azure Container Registry"},
+		{"on", []string{"FF_DOCKER_ACR_SKIP_MCR=1"}, []string{"mcr.microsoft.com", "123456789012.dkr.ecr.us-east-1.amazonaws.com", "docker.io"}, credentials.NewErrCredentialsNotFound().Error()},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			var outs []string
-			for _, host := range []string{"mcr.microsoft.com", "123456789012.dkr.ecr.us-east-1.amazonaws.com", "docker.io"} {
+			for _, host := range c.hosts {
 				cmd := exec.Command(filepath.Join(helperDir, helperName), "get")
 				cmd.Stdin = strings.NewReader(host)
 				cmd.Env = append(os.Environ(), c.env...)
@@ -115,7 +116,7 @@ func TestGetSkipsMCR(t *testing.T) {
 			}
 			for _, out := range outs[1:] {
 				if out != outs[0] {
-					t.Fatalf("mcr.microsoft.com must be indistinguishable from a foreign host, got %q and %q", outs[0], out)
+					t.Fatalf("foreign hosts must be indistinguishable, got %q and %q", outs[0], out)
 				}
 			}
 			if !strings.Contains(outs[0], c.want) {

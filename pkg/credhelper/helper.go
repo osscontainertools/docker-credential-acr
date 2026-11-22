@@ -33,7 +33,6 @@ import (
 var acrRE = regexp.MustCompile(`^.*\.azurecr\.io$|^.*\.azurecr\.cn$|^.*\.azurecr\.de$|^.*\.azurecr\.us$`)
 var strictHostCheck = config.EnvBool("FF_DOCKER_ACR_STRICT_HOST_CHECK", true)
 var skipMCR = config.EnvBool("FF_DOCKER_ACR_SKIP_MCR", false)
-var credentialsNotFound = config.EnvBool("FF_DOCKER_ACR_CREDENTIALS_NOT_FOUND", false)
 
 const (
 	mcrHostname    = "mcr.microsoft.com"
@@ -73,7 +72,7 @@ func parseACRRegistry(input string, strict bool) (string, bool) {
 
 func (a ACRCredHelper) Get(serverURL string) (string, string, error) {
 	host, ok := parseACRRegistry(serverURL, strictHostCheck)
-	if !ok && credentialsNotFound {
+	if !ok && skipMCR {
 		return "", "", credentials.NewErrCredentialsNotFound()
 	}
 	if !ok {

@@ -22,8 +22,8 @@ import (
 )
 
 func TestGetReportsCredentialsNotFound(t *testing.T) {
-	credentialsNotFound = true
-	t.Cleanup(func() { credentialsNotFound = false })
+	skipMCR = true
+	t.Cleanup(func() { skipMCR = false })
 	_, _, err := ACRCredHelper{}.Get("123456789012.dkr.ecr.us-east-1.amazonaws.com")
 	if !credentials.IsErrCredentialsNotFound(err) {
 		t.Fatalf("got %v, want credentials not found", err)
